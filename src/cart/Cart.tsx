@@ -7,49 +7,70 @@ import { remove } from "../store/cartSlice";
 const Cart: React.FC = () => {
   const dispatch = useDispatch();
   const { cartItems } = useSelector((state: RootState) => state.cart);
-  console.log(cartItems);
+
+  // Calculate total price
+  const totalPrice: number = cartItems.reduce((sum: number, item: productlistType): number => {
+    return sum + item.price;
+  }, 0);
 
   const removeToCart = (id: any) => {
-    console.log("Removing item with id:", id); // Debugging log
     dispatch(remove(id));
   };
 
   return (
     <>
-      <h1 className="text-3xl font-bold text-center mb-4">Cart Items</h1>
+      <h1 className="text-3xl font-bold text-center mb-4">Your Cart</h1>
       {cartItems.length === 0 ? (
         <p className="text-center text-gray-500">Your cart is empty!</p>
       ) : (
-        <div className="p-4">
-          <div className="overflow-x-auto">
-            <table className="min-w-full border border-gray-300">
-              <thead className="bg-gray-200">
-                <tr>
-                  <th className="px-4 py-2 border">Image</th>
-                  <th className="px-4 py-2 border">Name</th>
-                  <th className="px-4 py-2 border">Description</th>
-                  <th className="px-4 py-2 border">Price</th>
-                  <th className="px-4 py-2 border">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {cartItems.map((product: productlistType) => (
-                  <tr key={product.id} className="hover:bg-gray-100">
-                    <td className="px-4 py-2 border">
-                      <img src={product.image} alt={product.title} className="w-16 h-16 object-cover" />
-                    </td>
-                    <td className="px-4 py-2 border font-medium">{product.title}</td>
-                    <td className="px-4 py-2 border text-sm text-gray-600">{product.description}</td>
-                    <td className="px-4 py-2 border font-bold text-green-600">${product.price}</td>
-                    <td className="px-4 py-2 border text-center">
-                      <button onClick={() => removeToCart(product.id)} className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">
-                        Remove item
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="w-full h-full py-5">
+          <div className="container mx-auto">
+            {/* Cart Items Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {cartItems.map((product: productlistType) => (
+                <div key={product.id} className="p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition duration-300 bg-white">
+                  {/* Product Image */}
+                  <div className="flex justify-center mb-4">
+                    <img src={product.image} alt={product.title} className="w-32 h-32 object-contain" />
+                  </div>
+
+                  {/* Product Info */}
+                  <div className="text-center">
+                    <h2
+                      style={{
+                        overflow: "hidden",
+                        whiteSpace: "nowrap",
+                        textOverflow: "ellipsis",
+                        fontSize: "1.125rem",
+                        fontWeight: "600",
+                        color: "#4b5563",
+                        marginBottom: "0.5rem",
+                      }}
+                    >
+                      {product.title}
+                    </h2>
+                    {/* <p className="text-gray-600 text-sm mb-2">{product.description}</p> */}
+                    <p className="text-green-600 font-bold text-lg">${product.price.toFixed(2)}</p>
+                  </div>
+
+                  {/* Remove Button */}
+                  <div className="mt-4 text-center">
+                    <button
+                      onClick={() => removeToCart(product.id)}
+                      className="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-600 active:bg-red-700 transition duration-300"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Total Price Section */}
+            <div className="mt-6 flex justify-center items-center">
+              <span className="text-lg font-bold">Total Price:</span>
+              <span className="text-lg font-bold text-green-600">${totalPrice.toFixed(2)}</span>
+            </div>
           </div>
         </div>
       )}
