@@ -6,8 +6,10 @@ import { getProducts } from "../store/productSlice";
 import { CartItem } from "../types/productlist-type";
 import { AppDispatch } from "../store/store";
 import { add } from "../store/cartSlice";
+import CustomModal from "../util/custom/CustomModal";
 const ProductList: React.FC = () => {
   const [viewedProduct, setViewedProduct] = useState<CartItem | null>(null);
+
   const dispatch = useDispatch<AppDispatch>(); // Use the useDispatch hook to dispatch actions
   const { data: products, loading } = useSelector(
     (state: RootState) => state.products // Use "products" instead of "product"
@@ -64,16 +66,16 @@ const ProductList: React.FC = () => {
                     </div>
 
                     {/* View and Add to Cart Buttons */}
-                    <div className="mt-4 text-center">
+                    <div className="mb-4 text-center ">
                       <button
                         onClick={() => handleView(product)}
-                        className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-green-600 active:bg-green-700 transition duration-300 mr-2"
+                        className="bg-blue-500 mb-6 text-white px-6 py-2 rounded-md hover:bg-green-600 active:bg-green-700 transition duration-300 mr-2"
                       >
                         View
                       </button>
                       <button
                         onClick={() => addToCart(product)}
-                        className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 active:bg-blue-700 transition duration-300"
+                        className="bg-blue-500 text-white   px-6 py-2 rounded-md hover:bg-blue-600 active:bg-blue-700 transition duration-300"
                       >
                         Add to Cart
                       </button>
@@ -88,55 +90,9 @@ const ProductList: React.FC = () => {
             </div>
 
             {/* Product View Modal */}
-            {viewedProduct && (
-              <div
-                className="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50"
-                onClick={(e) => {
-                  if (e.target === e.currentTarget) handleCloseView(); // Close when clicking outside
-                }}
-              >
-                <div
-                  className="bg-white p-6 rounded-lg shadow-lg relative"
-                  style={{
-                    width: "90%",
-                    maxWidth: "400px", // Maximum size for larger screens
-                    height: "70vh",
-                    overflowY: "auto", // Adds scroll if content overflows
-                  }}
-                >
-                  {/* Close Button */}
-                  <button onClick={handleCloseView} className="text-gray-500 hover:text-gray-800 absolute top-2 right-2 text-2xl">
-                    &times;
-                  </button>
-
-                  {/* Product Details */}
-                  <div className="flex justify-center mb-4">
-                    <img
-                      src={viewedProduct.image}
-                      alt={viewedProduct.title}
-                      className="object-contain"
-                      style={{
-                        width: "80px", // Flexible width for different screen sizes
-                        maxHeight: "100px", // Prevents the image from becoming too large
-                      }}
-                    />
-                  </div>
-                  <h2 className="text-xl font-semibold text-gray-800 mb-2 text-center">{viewedProduct.title}</h2>
-                  <p className="text-sm text-gray-600 mb-4 text-center">{viewedProduct.description}</p>
-                  <p className="text-green-600 font-bold text-lg text-center">${viewedProduct.price.toFixed(2)}</p>
-
-                  {/* Action Buttons */}
-                  <div className="mt-4 text-center">
-                    <button
-                      onClick={() => addToCart(viewedProduct)}
-                      className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 active:bg-blue-700 transition duration-300"
-                    >
-                      Add to Cart
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            <div>
+              <CustomModal viewedProduct={viewedProduct} handleCloseView={handleCloseView} addToCart={addToCart} />
+            </div>
           </div>
         </div>
       )}

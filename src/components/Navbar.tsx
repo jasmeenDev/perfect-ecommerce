@@ -92,7 +92,7 @@ const Navbar: React.FC = () => {
         </button>
 
         {/* Menu Items */}
-        <ul className="mt-12 space-y-6 text-blue-600 p-6 pl-8">
+        <ul className="mt-12 space-y-6  text-start text-blue-600 p-6 pr-16">
           {" "}
           {/* Added `mt-12` for spacing under the close button */}
           <li>
