@@ -18,6 +18,7 @@ const ProductList: React.FC = () => {
   }, [dispatch]);
 
   const addToCart = (product: CartItem) => {
+    console.log(product);
     dispatch(add(product)); // Dispatch the action correctly
   };
   const handleView = (product: CartItem) => {
@@ -32,13 +33,13 @@ const ProductList: React.FC = () => {
     <>
       {loading && <p>Loading</p>}
       {!loading && (
-        <div className="w-full h-full bg-gray-200 shadow-md">
+        <div className="w-full h-full  py-5">
           <div className="container mx-auto">
             {/* Product Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {products && products.length > 0 ? (
                 products.map((product) => (
-                  <div key={product.id} className="p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300 bg-white">
+                  <div key={product.id} className="p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition duration-300 bg-white">
                     {/* Product Image */}
                     <div className="flex justify-center mb-4">
                       <img src={product.image} alt={product.title} className="w-32 h-32 object-contain" />
@@ -94,7 +95,15 @@ const ProductList: React.FC = () => {
                   if (e.target === e.currentTarget) handleCloseView(); // Close when clicking outside
                 }}
               >
-                <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full relative" id="cartModal">
+                <div
+                  className="bg-white p-6 rounded-lg shadow-lg relative"
+                  style={{
+                    width: "90%",
+                    maxWidth: "400px", // Maximum size for larger screens
+                    height: "70vh",
+                    overflowY: "auto", // Adds scroll if content overflows
+                  }}
+                >
                   {/* Close Button */}
                   <button onClick={handleCloseView} className="text-gray-500 hover:text-gray-800 absolute top-2 right-2 text-2xl">
                     &times;
@@ -102,12 +111,21 @@ const ProductList: React.FC = () => {
 
                   {/* Product Details */}
                   <div className="flex justify-center mb-4">
-                    <img src={viewedProduct.image} alt={viewedProduct.title} className="w-48 h-48 object-contain" />
+                    <img
+                      src={viewedProduct.image}
+                      alt={viewedProduct.title}
+                      className="object-contain"
+                      style={{
+                        width: "80px", // Flexible width for different screen sizes
+                        maxHeight: "100px", // Prevents the image from becoming too large
+                      }}
+                    />
                   </div>
-                  <h2 className="text-xl font-semibold text-gray-800 mb-2">{viewedProduct.title}</h2>
-                  <p className="text-sm text-gray-600 mb-4">{viewedProduct.description}</p>
-                  <p className="text-green-600 font-bold text-lg">${viewedProduct.price.toFixed(2)}</p>
+                  <h2 className="text-xl font-semibold text-gray-800 mb-2 text-center">{viewedProduct.title}</h2>
+                  <p className="text-sm text-gray-600 mb-4 text-center">{viewedProduct.description}</p>
+                  <p className="text-green-600 font-bold text-lg text-center">${viewedProduct.price.toFixed(2)}</p>
 
+                  {/* Action Buttons */}
                   <div className="mt-4 text-center">
                     <button
                       onClick={() => addToCart(viewedProduct)}

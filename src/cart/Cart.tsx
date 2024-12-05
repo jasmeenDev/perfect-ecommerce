@@ -7,7 +7,7 @@ import { remove } from "../store/cartSlice";
 const Cart: React.FC = () => {
   const dispatch = useDispatch();
   const { cartItems } = useSelector((state: RootState) => state.cart);
-
+  console.log(cartItems);
   const removeToCart = (id: any) => {
     console.log("Removing item with id:", id); // Debugging log
     dispatch(remove(id));
