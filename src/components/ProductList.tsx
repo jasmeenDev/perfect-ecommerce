@@ -6,10 +6,11 @@ import { getProducts } from "../store/productSlice";
 import { CartItem } from "../types/productlist-type";
 import { AppDispatch } from "../store/store";
 import { add } from "../store/cartSlice";
+import { useNavigate } from "react-router-dom";
 import CustomModal from "../util/custom/CustomModal";
 const ProductList: React.FC = () => {
   const [viewedProduct, setViewedProduct] = useState<CartItem | null>(null);
-
+  const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>(); // Use the useDispatch hook to dispatch actions
   const { data: products, loading } = useSelector(
     (state: RootState) => state.products // Use "products" instead of "product"
@@ -30,6 +31,9 @@ const ProductList: React.FC = () => {
   const handleCloseView = () => {
     setViewedProduct(null); // Close the view mode by resetting to null
   };
+  const handleAddProduct = () => {
+    navigate("/add-product");
+  };
 
   return (
     <>
@@ -37,6 +41,11 @@ const ProductList: React.FC = () => {
       {!loading && (
         <div className="w-full h-full  py-5">
           <div className="container mx-auto">
+            <div className="flex justify-end mb-4">
+              <button onClick={handleAddProduct} className="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 transition duration-300">
+                + Add Product
+              </button>
+            </div>
             {/* Product Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {products && products.length > 0 ? (
