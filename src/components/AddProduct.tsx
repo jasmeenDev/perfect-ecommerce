@@ -1,67 +1,64 @@
-import React, { useState } from "react";
+import React from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import { useNavigate } from "react-router-dom";
+import ReactDOM from "react-dom";
 import { useDispatch } from "react-redux";
 import { addProductAsync } from "../store/addProductSlice";
-import { string } from "yup";
 
-const AddProduct: React.FC = () => {
-  const navigate = useNavigate();
+interface AddProductModalProps {
+  isOpen: boolean; // Controls modal visibility
+  onClose: () => void; // Callback to close the modal
+}
+
+const AddProduct: React.FC<AddProductModalProps> = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  // Initial Values
   const initialValues = {
     title: "",
     price: "",
-    image: "",
     description: "",
   };
 
-  // Validation Logic
   const validate = (values: typeof initialValues) => {
     const errors: Record<string, string> = {};
-
-    if (!values.title) {
-      errors.title = "Title is required";
-    }
-
-    if (!values.price) {
-      errors.price = "Price is required";
-    } else if (isNaN(Number(values.price))) {
-      errors.price = "Price must be a number";
-    }
-
-    if (!values.description) {
-      errors.description = "Description is required";
-    }
-
-    setFormErrors(errors);
+    if (!values.title) errors.title = "Title is required";
+    if (!values.price) errors.price = "Price is required";
+    else if (isNaN(Number(values.price))) errors.price = "Price must be a number";
+    if (!values.description) errors.description = "Description is required";
     return errors;
   };
 
-  // Form Submission Handler
   const handleSubmit = (values: typeof initialValues) => {
-    // debugger;
-    console.log("New Product Data:", values);
     const data = {
       title: values.title,
-      price: parseFloat(values.price), // Ensure price is a number
+      price: parseFloat(values.price),
       description: values.description,
-      image: "about1.jpeg", // You can use a placeholder or dynamic image
+      image: "placeholder.jpg",
     };
-
     dispatch(addProductAsync(data));
+    onClose(); // Close the modal after submission
   };
 
-  return (
-    <div className="w-full h-full py-10">
-      <div className="container mx-auto">
+  // Render modal only when `isOpen` is true
+  if (!isOpen) return null;
+
+  return ReactDOM.createPortal(
+    <div
+      className="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50"
+      onClick={onClose} // Close modal when clicking outside
+    >
+      <div
+        className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md relative"
+        onClick={(e) => e.stopPropagation()} // Prevent modal close when clicking inside
+      >
+        {/* Close Button */}
+        <button onClick={onClose} className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-2xl">
+          &times;
+        </button>
         <h2 className="text-2xl font-bold mb-6">Add New Product</h2>
+
         <Formik initialValues={initialValues} validate={validate} onSubmit={handleSubmit}>
           {({ isSubmitting }) => (
-            <Form className="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md">
-              {/* Title */}
+            <Form>
               <div className="mb-4">
                 <label htmlFor="title" className="block text-gray-700 font-medium mb-2">
                   Product Title
@@ -69,8 +66,6 @@ const AddProduct: React.FC = () => {
                 <Field type="text" id="title" name="title" className="w-full px-4 py-2 border border-gray-300 rounded-md" />
                 <ErrorMessage name="title">{(msg) => <div className="text-red-500 text-sm mt-1">{msg}</div>}</ErrorMessage>
               </div>
-
-              {/* Price */}
               <div className="mb-4">
                 <label htmlFor="price" className="block text-gray-700 font-medium mb-2">
                   Product Price
@@ -78,8 +73,6 @@ const AddProduct: React.FC = () => {
                 <Field type="text" id="price" name="price" className="w-full px-4 py-2 border border-gray-300 rounded-md" />
                 <ErrorMessage name="price">{(msg) => <div className="text-red-500 text-sm mt-1">{msg}</div>}</ErrorMessage>
               </div>
-
-              {/* Description */}
               <div className="mb-4">
                 <label htmlFor="description" className="block text-gray-700 font-medium mb-2">
                   Product Description
@@ -92,8 +85,6 @@ const AddProduct: React.FC = () => {
                 />
                 <ErrorMessage name="description">{(msg) => <div className="text-red-500 text-sm mt-1">{msg}</div>}</ErrorMessage>
               </div>
-
-              {/* Submit Button */}
               <div className="text-center">
                 <button
                   type="submit"
@@ -107,7 +98,8 @@ const AddProduct: React.FC = () => {
           )}
         </Formik>
       </div>
-    </div>
+    </div>,
+    document.getElementById("modal-root")! // Portal to `modal-root`
   );
 };
 
