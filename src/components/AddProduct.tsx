@@ -1,16 +1,20 @@
 import React, { useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { addProductAsync } from "../store/addProductSlice";
+import { string } from "yup";
 
 const AddProduct: React.FC = () => {
   const navigate = useNavigate();
-
+  const dispatch = useDispatch();
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Initial Values
   const initialValues = {
     title: "",
     price: "",
+    image: "",
     description: "",
   };
 
@@ -38,8 +42,16 @@ const AddProduct: React.FC = () => {
 
   // Form Submission Handler
   const handleSubmit = (values: typeof initialValues) => {
+    // debugger;
     console.log("New Product Data:", values);
-    navigate("/"); // Navigate back to the main page
+    const data = {
+      title: values.title,
+      price: parseFloat(values.price), // Ensure price is a number
+      description: values.description,
+      image: "about1.jpeg", // You can use a placeholder or dynamic image
+    };
+
+    dispatch(addProductAsync(data));
   };
 
   return (
