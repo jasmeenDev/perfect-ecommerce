@@ -1,9 +1,9 @@
 import React from "react";
-import { Formik, Form, Field, ErrorMessage } from "formik";
 import ReactDOM from "react-dom";
 import { useDispatch } from "react-redux";
 import { addProductAsync } from "../store/addProductSlice";
-import { initialProductValues, productValidationSchema, productFields } from "../data/productData";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import { initialProductValues, productFields, productValidationSchema } from "../data/ProductData";
 
 interface AddProductModalProps {
   isOpen: boolean; // Controls modal visibility
