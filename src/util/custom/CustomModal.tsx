@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 
-// Define types for the product and the props
 interface Product {
   title: string;
   description: string;
@@ -10,61 +11,55 @@ interface Product {
 }
 
 interface CustomModalProps {
-  viewedProduct: Product | null; // viewedProduct can be null initially
-  handleCloseView: () => void; // Callback to close the product view
-  updateProduct: (updatedProduct: Product) => void; // Function to handle product updates
+  viewedProduct: Product | null; // Product to view or edit
+  handleCloseView: () => void; // Callback to close the modal
+  updateProduct: (updatedProduct: Product) => void; // Callback to update the product
 }
 
 const CustomModal: React.FC<CustomModalProps> = ({ viewedProduct, handleCloseView, updateProduct }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false); // Controls whether we are in edit mode
 
-  // Local state for the form values
-  const [formValues, setFormValues] = useState<Product | null>(null);
-
-  // Open the modal and prefill form values when viewedProduct changes
   useEffect(() => {
     if (viewedProduct) {
-      setFormValues(viewedProduct); // Prefill form with viewed product data
-      setIsModalOpen(true);
+      setIsModalOpen(true); // Open the modal when a product is passed
     }
   }, [viewedProduct]);
 
-  // Close the modal
   const closeModal = () => {
     setIsModalOpen(false);
-    handleCloseView(); // Trigger callback to indicate modal closure
+    setIsEditing(false); // Exit edit mode on modal close
+    handleCloseView(); // Notify parent to close the modal
   };
 
-  // Handle form input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormValues((prev) => ({
-      ...prev!,
-      [name]: name === "price" ? parseFloat(value) || 0 : value, // Handle price as a number
-    }));
-  };
+  const formik = useFormik({
+    initialValues: viewedProduct || {
+      title: "",
+      description: "",
+      price: 0,
+      image: "",
+    },
+    enableReinitialize: true, // Update form values when viewedProduct changes
+    validationSchema: Yup.object({
+      title: Yup.string().required("Title is required"),
+      description: Yup.string().required("Description is required"),
+      price: Yup.number().required("Price is required").min(0, "Price must be positive"),
+    }),
+    onSubmit: (values) => {
+      updateProduct(values); // Send updated product to parent
+      closeModal(); // Close the modal
+    },
+  });
 
-  // Handle the update button click
-  const handleUpdate = () => {
-    if (formValues) {
-      console.log("Updated Product:", formValues); // Log updated product data
-      updateProduct(formValues); // Call the update function
-      closeModal(); // Close the modal after updating
-    }
-  };
-
-  // Modal content
   const modalContent = (
     <div
-      className={`fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50 transition-all duration-500 ${
-        isModalOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-      }`}
+      className={`fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50`}
       onClick={(e) => {
-        if (e.target === e.currentTarget) closeModal(); // Close when clicking outside the modal
+        if (e.target === e.currentTarget) closeModal(); // Close modal on outside click
       }}
     >
       <div
-        className="bg-white p-6 rounded-lg shadow-lg relative transform transition-all duration-500"
+        className="bg-white p-6 rounded-lg shadow-lg relative"
         style={{
           width: "90%",
           maxWidth: "400px",
@@ -72,24 +67,27 @@ const CustomModal: React.FC<CustomModalProps> = ({ viewedProduct, handleCloseVie
           overflowY: "auto",
         }}
       >
-        {/* Close Button */}
-        <button onClick={closeModal} className="text-gray-500 hover:text-gray-800 absolute top-2 right-2 text-2xl">
+        <button onClick={closeModal} className="absolute top-2 right-2 text-gray-500 hover:text-gray-800">
           &times;
         </button>
 
-        {/* Form */}
-        {formValues && (
-          <form>
+        {/* Conditional Rendering */}
+        {isEditing ? (
+          // Render the Formik Form when in editing mode
+          <form onSubmit={formik.handleSubmit}>
+            <h2 className="text-lg font-bold mb-4">Edit Product</h2>
             {/* Title */}
             <div className="mb-4">
               <label className="block text-gray-700 font-medium mb-1">Title</label>
               <input
                 type="text"
                 name="title"
-                value={formValues.title}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                value={formik.values.title}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className="w-full border px-3 py-2 rounded focus:outline-none"
               />
+              {formik.touched.title && formik.errors.title && <p className="text-red-500 text-sm mt-1">{formik.errors.title}</p>}
             </div>
 
             {/* Description */}
@@ -97,11 +95,13 @@ const CustomModal: React.FC<CustomModalProps> = ({ viewedProduct, handleCloseVie
               <label className="block text-gray-700 font-medium mb-1">Description</label>
               <textarea
                 name="description"
-                value={formValues.description}
-                onChange={handleInputChange}
+                value={formik.values.description}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 rows={3}
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                className="w-full border px-3 py-2 rounded focus:outline-none"
               ></textarea>
+              {formik.touched.description && formik.errors.description && <p className="text-red-500 text-sm mt-1">{formik.errors.description}</p>}
             </div>
 
             {/* Price */}
@@ -110,38 +110,53 @@ const CustomModal: React.FC<CustomModalProps> = ({ viewedProduct, handleCloseVie
               <input
                 type="number"
                 name="price"
-                value={formValues.price}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+                value={formik.values.price}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className="w-full border px-3 py-2 rounded focus:outline-none"
               />
+              {formik.touched.price && formik.errors.price && <p className="text-red-500 text-sm mt-1">{formik.errors.price}</p>}
             </div>
 
-            {/* Image */}
-
-            {/* Action Buttons */}
-            <div className="mt-4 text-center">
-              <button
-                // onClick={() => handleView(product)}
-                className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition duration-300 mr-2"
-              >
-                View
-              </button>
+            {/* Buttons */}
+            <div className="mt-4 text-right">
               <button
                 type="button"
-                onClick={handleUpdate}
-                className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 active:bg-blue-700 transition duration-300"
+                onClick={() => setIsEditing(false)} // Exit editing mode
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded mr-2"
               >
+                Cancel
+              </button>
+              <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
                 Update
               </button>
             </div>
           </form>
+        ) : (
+          // Render simple view when not editing
+          <div>
+            <h2 className="text-lg font-bold mb-4">{viewedProduct?.title}</h2>
+            <p className="mb-2">
+              <strong>Description:</strong> {viewedProduct?.description}
+            </p>
+            <p className="mb-4">
+              <strong>Price:</strong> ${viewedProduct?.price}
+            </p>
+            <div className="text-right">
+              <button
+                onClick={() => setIsEditing(true)} // Enter editing mode
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
+                View
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
   );
 
-  // Render modal via React Portal
-  return viewedProduct ? ReactDOM.createPortal(modalContent, document.getElementById("modal-root")!) : null;
+  return isModalOpen ? ReactDOM.createPortal(modalContent, document.getElementById("modal-root")!) : null;
 };
 
 export default CustomModal;
