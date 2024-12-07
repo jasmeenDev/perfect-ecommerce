@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
-import { useFormik } from "formik";
-import * as Yup from "yup";
+import { Formik, Form, Field } from "formik";
+import * as Yup from "yup"; // Import Yup for validation
 
+// Define types for the product and the props
 interface Product {
   title: string;
   description: string;
@@ -11,55 +12,53 @@ interface Product {
 }
 
 interface CustomModalProps {
-  viewedProduct: Product | null; // Product to view or edit
-  handleCloseView: () => void; // Callback to close the modal
-  updateProduct: (updatedProduct: Product) => void; // Callback to update the product
+  viewedProduct: Product | null; // viewedProduct can be null initially
+  handleCloseView: () => void; // Callback to close the product view
+  addToCart: (product: Product) => void; // Function to add the product to the cart
 }
 
-const CustomModal: React.FC<CustomModalProps> = ({ viewedProduct, handleCloseView, updateProduct }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false); // Controls whether we are in edit mode
+// Define Yup validation schema
+const validationSchema = Yup.object({
+  title: Yup.string().required("Title is required").min(3, "Title must be at least 3 characters"),
+  description: Yup.string().required("Description is required").min(5, "Description must be at least 5 characters"),
+  price: Yup.number().required("Price is required").positive("Price must be a positive number").min(0.01, "Price must be greater than 0"),
+  image: Yup.string().required("Image URL is required").url("Invalid URL format"),
+});
 
-  useEffect(() => {
-    if (viewedProduct) {
-      setIsModalOpen(true); // Open the modal when a product is passed
-    }
-  }, [viewedProduct]);
+const CustomModal: React.FC<CustomModalProps> = ({ viewedProduct, handleCloseView, addToCart }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false); // State to track mode (view or edit)
+
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setIsEditing(false); // Exit edit mode on modal close
-    handleCloseView(); // Notify parent to close the modal
+    handleCloseView();
+    setIsEditMode(false); // Reset to view mode when closing
   };
 
-  const formik = useFormik({
-    initialValues: viewedProduct || {
-      title: "",
-      description: "",
-      price: 0,
-      image: "",
-    },
-    enableReinitialize: true, // Update form values when viewedProduct changes
-    validationSchema: Yup.object({
-      title: Yup.string().required("Title is required"),
-      description: Yup.string().required("Description is required"),
-      price: Yup.number().required("Price is required").min(0, "Price must be positive"),
-    }),
-    onSubmit: (values) => {
-      updateProduct(values); // Send updated product to parent
-      closeModal(); // Close the modal
-    },
-  });
+  useEffect(() => {
+    if (viewedProduct) openModal();
+  }, [viewedProduct]);
+
+  const handleUpdateProduct = (updatedProduct: Product) => {
+    console.log("Updated Product:", updatedProduct); // Log the updated product
+    setIsEditMode(false); // Switch back to view mode
+  };
 
   const modalContent = (
     <div
-      className={`fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50`}
+      className={`fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50 transition-all duration-500 ${
+        isModalOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+      }`}
       onClick={(e) => {
-        if (e.target === e.currentTarget) closeModal(); // Close modal on outside click
+        if (e.target === e.currentTarget) closeModal();
       }}
     >
       <div
-        className="bg-white p-6 rounded-lg shadow-lg relative"
+        className="bg-white p-6 rounded-lg shadow-lg relative transform transition-all duration-500"
         style={{
           width: "90%",
           maxWidth: "400px",
@@ -67,96 +66,89 @@ const CustomModal: React.FC<CustomModalProps> = ({ viewedProduct, handleCloseVie
           overflowY: "auto",
         }}
       >
-        <button onClick={closeModal} className="absolute top-2 right-2 text-gray-500 hover:text-gray-800">
+        {/* Close Button */}
+        <button onClick={closeModal} className="text-gray-500 hover:text-gray-800 absolute top-2 right-2 text-2xl">
           &times;
         </button>
 
-        {/* Conditional Rendering */}
-        {isEditing ? (
-          // Render the Formik Form when in editing mode
-          <form onSubmit={formik.handleSubmit}>
-            <h2 className="text-lg font-bold mb-4">Edit Product</h2>
-            {/* Title */}
-            <div className="mb-4">
-              <label className="block text-gray-700 font-medium mb-1">Title</label>
-              <input
-                type="text"
-                name="title"
-                value={formik.values.title}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                className="w-full border px-3 py-2 rounded focus:outline-none"
-              />
-              {formik.touched.title && formik.errors.title && <p className="text-red-500 text-sm mt-1">{formik.errors.title}</p>}
+        {isEditMode ? (
+          // Update Mode: Formik Form
+          <Formik
+            initialValues={{
+              title: viewedProduct?.title || "",
+              description: viewedProduct?.description || "",
+              price: viewedProduct?.price || 0,
+              image: viewedProduct?.image || "",
+            }}
+            validationSchema={validationSchema} // Integrating Yup validation schema
+            onSubmit={(values) => handleUpdateProduct(values as Product)}
+          >
+            {({ errors, touched }) => (
+              <Form>
+                <div className="mb-4">
+                  <label className="block text-gray-700">Title</label>
+                  <Field name="title" className="border border-gray-300 p-2 w-full rounded" placeholder="Product Title" />
+                  {errors.title && touched.title && <div className="text-red-500 text-sm">{errors.title}</div>}
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700">Description</label>
+                  <Field name="description" as="textarea" className="border border-gray-300 p-2 w-full rounded" placeholder="Product Description" />
+                  {errors.description && touched.description && <div className="text-red-500 text-sm">{errors.description}</div>}
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700">Price</label>
+                  <Field name="price" type="number" className="border border-gray-300 p-2 w-full rounded" placeholder="Product Price" />
+                  {errors.price && touched.price && <div className="text-red-500 text-sm">{errors.price}</div>}
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-700">Image URL</label>
+                  <Field name="image" className="border border-gray-300 p-2 w-full rounded" placeholder="Image URL" />
+                  {errors.image && touched.image && <div className="text-red-500 text-sm">{errors.image}</div>}
+                </div>
+                <div className="flex justify-end space-x-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditMode(false)}
+                    className="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Save
+                  </button>
+                </div>
+              </Form>
+            )}
+          </Formik>
+        ) : (
+          // View Mode
+          <>
+            <div className="flex justify-center mb-4">
+              <img src={viewedProduct?.image} alt={viewedProduct?.title} className="object-contain" style={{ width: "80px", maxHeight: "100px" }} />
             </div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2 text-center">{viewedProduct?.title}</h2>
+            <p className="text-sm text-gray-600 mb-4 text-center">{viewedProduct?.description}</p>
+            <p className="text-green-600 font-bold text-lg text-center">${viewedProduct?.price?.toFixed(2)}</p>
 
-            {/* Description */}
-            <div className="mb-4">
-              <label className="block text-gray-700 font-medium mb-1">Description</label>
-              <textarea
-                name="description"
-                value={formik.values.description}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                rows={3}
-                className="w-full border px-3 py-2 rounded focus:outline-none"
-              ></textarea>
-              {formik.touched.description && formik.errors.description && <p className="text-red-500 text-sm mt-1">{formik.errors.description}</p>}
-            </div>
-
-            {/* Price */}
-            <div className="mb-4">
-              <label className="block text-gray-700 font-medium mb-1">Price</label>
-              <input
-                type="number"
-                name="price"
-                value={formik.values.price}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                className="w-full border px-3 py-2 rounded focus:outline-none"
-              />
-              {formik.touched.price && formik.errors.price && <p className="text-red-500 text-sm mt-1">{formik.errors.price}</p>}
-            </div>
-
-            {/* Buttons */}
-            <div className="mt-4 text-right">
+            {/* Action Buttons */}
+            <div className="mt-4 text-center">
+              {/* <button onClick={() => addToCart(viewedProduct!)} className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+                Add to Cart
+              </button>  */}
               <button
-                type="button"
-                onClick={() => setIsEditing(false)} // Exit editing mode
-                className="bg-gray-300 text-gray-700 px-4 py-2 rounded mr-2"
+                onClick={() => setIsEditMode(true)} // Switch to edit mode
+                className="bg-blue-500 text-white px-6 py-2 rounded ml-4 hover:bg-yellow-600"
               >
-                Cancel
-              </button>
-              <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
                 Update
               </button>
             </div>
-          </form>
-        ) : (
-          // Render simple view when not editing
-          <div>
-            <h2 className="text-lg font-bold mb-4">{viewedProduct?.title}</h2>
-            <p className="mb-2">
-              <strong>Description:</strong> {viewedProduct?.description}
-            </p>
-            <p className="mb-4">
-              <strong>Price:</strong> ${viewedProduct?.price}
-            </p>
-            <div className="text-right">
-              <button
-                onClick={() => setIsEditing(true)} // Enter editing mode
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              >
-                View
-              </button>
-            </div>
-          </div>
+          </>
         )}
       </div>
     </div>
   );
 
-  return isModalOpen ? ReactDOM.createPortal(modalContent, document.getElementById("modal-root")!) : null;
+  return viewedProduct ? ReactDOM.createPortal(modalContent, document.getElementById("modal-root")!) : null;
 };
 
 export default CustomModal;
